@@ -1,14 +1,87 @@
 const imageTargetPipelineModule = () => {
-  let model;
-  const initialScene = ({ scene }) => {
+  // const raycaster = new THREE.Raycaster();
+  // const tapPosition = new THREE.Vector2();
+  var model;
+  var graphInfo = [
+    {
+      id: "01",
+      month: "Jan",
+      expense: "100",
+      currencies: ["dollar", "rupee", "pound"],
+      current: "dollar"
+    },
+    {
+      id: "02",
+      month: "Feb",
+      expense: "500",
+      currencies: ["dollar", "rupee", "pound"],
+      current: "dollar"
+    },
+    {
+      id: "03",
+      month: "March",
+      expense: "1000",
+      currencies: ["dollar", "rupee", "pound"],
+      current: "dollar"
+    },
+    {
+      id: "04",
+      month: "April",
+      expense: "250",
+      currencies: ["dollar", "rupee", "pound"],
+      current: "dollar"
+    },
+    {
+      id: "05",
+      month: "May",
+      expense: "200",
+      currencies: ["dollar", "rupee", "pound"],
+      current: "dollar"
+    },
+    {
+      id: "06",
+      month: "June",
+      expense: "800",
+      currencies: ["dollar", "rupee", "pound"],
+      current: "dollar"
+    }
+  ];
+  console.log(graphInfo.length);
+  const initialScene = ({ scene, camera }) => {
     // Create initalScene which means what you want to place or draw when image target is achieved
-    const geometry = new THREE.BoxBufferGeometry(1, 1, 1);
-    const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-    const mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
+    var geometry = new THREE.BoxGeometry(0.2, 2, 0.2);
+    var material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    var xDistance = 0;
+    let barsHeight;
+    for (let i = 0; i < graphInfo.length; i++) {
+      if (graphInfo[i].expense <= 300) {
+        barsHeight = 0.8;
+        geometry = new THREE.BoxGeometry(0.2, barsHeight, 0.2);
+        material = new THREE.MeshBasicMaterial({ color: 0x9ecc6a });
+      }
+      if (graphInfo[i].expense > 300 && graphInfo[i].expense <= 600) {
+        barsHeight = 1.6;
+        geometry = new THREE.BoxGeometry(0.2, barsHeight, 0.2);
+        material = new THREE.MeshBasicMaterial({ color: 0xe38944 });
+      }
+      if (graphInfo[i].expense > 600) {
+        barsHeight = 2.4;
+        geometry = new THREE.BoxGeometry(0.2, barsHeight, 0.2);
+        material = new THREE.MeshBasicMaterial({ color: 0xf23c1f });
+      }
+
+      var mesh = new THREE.Mesh(geometry, material);
+      mesh.position.x = xDistance;
+      // mesh.position.z = xDistance;
+      xDistance += 0.4;
+      scene.add(mesh);
+    }
     model = scene.add(mesh);
+    console.log(model);
+
     model.visible = false;
     //initial position of camera
+    camera.position.set(0.5, 2, 4);
   };
 
   //To load model or 3d item if image target name matches the detected area.
@@ -16,8 +89,10 @@ const imageTargetPipelineModule = () => {
   const showTarget = ({ detail }) => {
     // This string must match the name of the image target uploaded to 8th Wall.
     if (detail.name === "debit-card-demo") {
-      model.visible = true;
       model.position.copy(detail.position);
+      model.quaternion.copy(detail.rotation);
+      model.scale.set(detail.scale, detail.scale, detail.scale);
+      model.visible = true;
       // model.position.x = detail.position.x + 0.5;
     }
   };
