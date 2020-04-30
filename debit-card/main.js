@@ -4,7 +4,8 @@ const imageTargetPipelineModule = () => {
   const MINT = 0x00edaf;
   const MANGO = 0xffc828;
   const allFrames = {};
-  let model;
+  const videoFile = "./video/short-video.mp4";
+  let model, video;
   const graphInfo = [
     {
       id: "01",
@@ -47,58 +48,65 @@ const imageTargetPipelineModule = () => {
       expense: "800",
       currencies: ["dollar", "rupee", "pound"],
       current: "dollar"
+    },
+    {
+      id: "07",
+      month: "July",
+      expense: "400",
+      currencies: ["dollar", "rupee", "pound"],
+      current: "dollar"
+    },
+    {
+      id: "08",
+      month: "Aug",
+      expense: "300",
+      currencies: ["dollar", "rupee", "pound"],
+      current: "dollar"
+    },
+    {
+      id: "09",
+      month: "Sep",
+      expense: "100",
+      currencies: ["dollar", "rupee", "pound"],
+      current: "dollar"
+    },
+    {
+      id: "10",
+      month: "Oct",
+      expense: "550",
+      currencies: ["dollar", "rupee", "pound"],
+      current: "dollar"
+    },
+    {
+      id: "11",
+      month: "Nov",
+      expense: "800",
+      currencies: ["dollar", "rupee", "pound"],
+      current: "dollar"
+    },
+    {
+      id: "12",
+      month: "Dec",
+      expense: "900",
+      currencies: ["dollar", "rupee", "pound"],
+      current: "dollar"
     }
   ];
 
   const framePane = (scaledWidth, scaledHeight) => {
     const material = new THREE.MeshBasicMaterial({ color: LIGHT_PURPLE });
     material.alphaMap = new THREE.DataTexture(
-      new Uint8Array([0, 127, 0]),
-      1,
-      1,
+      new Uint8Array([0, 50, 0]),
+      2,
+      2,
       THREE.RGBFormat
     );
     material.alphaMap.needsUpdate = true;
     material.transparent = true;
     return new THREE.Mesh(
-      new THREE.CubeGeometry(scaledWidth, scaledHeight, 1),
+      new THREE.CubeGeometry(scaledWidth, scaledHeight * 2, 0),
       material
     );
-  };
-
-  const createBarGraph = () => {
-    const barsGroup = new THREE.Group();
-    // Create initalScene which means what you want to place or draw when image target is achieved
-    let xDistance = 0;
-    let barsHeight = 0.3;
-    for (let i = 0; i < graphInfo.length; i++) {
-      if (graphInfo[i].expense <= 300) {
-        let smallScale = new THREE.Mesh(
-          new THREE.PlaneGeometry(0.1, barsHeight, 0.001),
-          new THREE.MeshBasicMaterial({ color: 0x00d45c })
-        );
-        smallScale.position.set(xDistance, 1, 0.5);
-        barsGroup.add(smallScale);
-      }
-      if (graphInfo[i].expense > 301 && graphInfo[i].expense <= 600) {
-        let mediumScale = new THREE.Mesh(
-          new THREE.PlaneGeometry(0.1, barsHeight * 2, 0.001),
-          new THREE.MeshBasicMaterial({ color: 0xf57542 })
-        );
-        mediumScale.position.set(xDistance, 1.15, 0.5);
-        barsGroup.add(mediumScale);
-      }
-      if (graphInfo[i].expense > 600) {
-        let largeScale = new THREE.Mesh(
-          new THREE.PlaneGeometry(0.1, barsHeight * 3, 0.001),
-          new THREE.MeshBasicMaterial({ color: 0xbf3904 })
-        );
-        largeScale.position.set(xDistance, 1.3, 0.5);
-        barsGroup.add(largeScale);
-      }
-      xDistance = xDistance + 0.12;
-    }
-    return barsGroup;
   };
 
   const axis = () => {
@@ -133,11 +141,71 @@ const imageTargetPipelineModule = () => {
     return axes;
   };
 
+  const videoBlog = (scaledWidth, scaledHeight) => {
+    video = document.createElement("video");
+    video.src = videoFile;
+    video.setAttribute("preload", "auto");
+    video.setAttribute("autoplay", "true");
+    video.setAttribute("loop", "");
+    video.setAttribute("muted", "");
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
+
+    const texture = new THREE.VideoTexture(video);
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.format = THREE.RGBFormat;
+    const videoObj = new THREE.Mesh(
+      new THREE.PlaneGeometry(scaledWidth / 2, scaledHeight / 2),
+      new THREE.MeshBasicMaterial({ map: texture })
+    );
+    videoObj.position.set(-0.5, 0.6, 0.003);
+    return videoObj;
+  };
+
+  const createBarGraph = (scaledWidth, scaledHeight) => {
+    const barsGroup = new THREE.Group();
+    // Create initalScene which means what you want to place or draw when image target is achieved
+    let xDistance = 0;
+    let barsHeight = 0.25;
+    for (let i = 0; i < graphInfo.length; i++) {
+      if (graphInfo[i].expense <= 300) {
+        let smallScale = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.06, barsHeight, 0.001),
+          new THREE.MeshBasicMaterial({ color: 0x4ca66f })
+        );
+        smallScale.position.set(xDistance, -0.001, 0.5);
+        barsGroup.add(smallScale);
+      }
+      if (graphInfo[i].expense > 301 && graphInfo[i].expense <= 600) {
+        let mediumScale = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.06, barsHeight * 2, 0.001),
+          new THREE.MeshBasicMaterial({ color: 0xc29523 })
+        );
+        mediumScale.position.set(xDistance, 0.12, 0.5);
+        barsGroup.add(mediumScale);
+      }
+      if (graphInfo[i].expense > 600) {
+        let largeScale = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.06, barsHeight * 3, 0.001),
+          new THREE.MeshBasicMaterial({ color: 0xc46149 })
+        );
+        largeScale.position.set(xDistance, 0.25, 0.5);
+        barsGroup.add(largeScale);
+      }
+      xDistance = xDistance + 0.1;
+    }
+    barsGroup.position.set(-0.5, 0.8, 0.05);
+
+    return barsGroup;
+  };
+
   const buildPrimitiveFrame = ({ scaledWidth, scaledHeight }) => {
     const frame = new THREE.Group();
     frame.add(framePane(scaledWidth, scaledHeight));
     frame.add(axis());
-    frame.add(createBarGraph());
+    frame.add(createBarGraph(scaledWidth, scaledHeight));
+    frame.add(videoBlog(scaledWidth, scaledHeight));
     model.add(frame);
     return frame;
   };
@@ -153,13 +221,14 @@ const imageTargetPipelineModule = () => {
     frame.position.copy(detail.position);
     frame.quaternion.copy(detail.rotation);
     frame.scale.set(detail.scale, detail.scale, detail.scale);
-    console.log(frame);
+    video.play();
     frame.visible = true;
   };
 
   // Hides the image frame when the target is no longer detected.
   const hideTarget = ({ detail }) => {
     if (detail.name === "card-detection-poc") {
+      video.pause();
       allFrames[detail.name].visible = false;
     }
   };
