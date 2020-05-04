@@ -1,11 +1,10 @@
 const imageTargetPipelineModule = () => {
-  const LIGHT_PURPLE = 0xad50ff;
-  const CHERRY = 0xdd0065;
-  const MINT = 0x00edaf;
-  const MANGO = 0xffc828;
+  // const CHERRY = 0xdd0065;
+  // const MINT = 0x00edaf;
+  // const MANGO = 0xffc828;
   const allFrames = {};
-  const videoFile = "./video/short-video.mp4";
-  let model, video;
+  const videoFile = "./video/video-12.mp4";
+  let model, video, font, graphPane;
   const graphInfo = [
     {
       id: "01",
@@ -94,54 +93,97 @@ const imageTargetPipelineModule = () => {
   ];
 
   const framePane = (scaledWidth, scaledHeight) => {
-    const material = new THREE.MeshBasicMaterial({ color: LIGHT_PURPLE });
+    const pane = new THREE.Group();
+    const material = new THREE.MeshBasicMaterial({ color: 0xff9999 });
     material.alphaMap = new THREE.DataTexture(
-      new Uint8Array([0, 50, 0]),
-      2,
-      2,
+      new Uint8Array([0, 70, 0]),
+      1,
+      1,
       THREE.RGBFormat
     );
     material.alphaMap.needsUpdate = true;
     material.transparent = true;
-    return new THREE.Mesh(
-      new THREE.CubeGeometry(scaledWidth, scaledHeight * 2, 0),
+    graphPane = new THREE.Mesh(
+      new THREE.PlaneGeometry(scaledWidth * 2, scaledHeight + 0.05, 0),
       material
     );
+    graphPane.position.set(-0.2, 1, 0);
+    // debugger;
+    pane.add(graphPane);
+    const monthGraph = createBarGraph(
+      scaledWidth,
+      scaledHeight + 0.02,
+      graphPane.position
+    );
+    const paneTitle = fontInit("Monthly Expense", 0.08, 0.008, 0x333);
+    paneTitle.position.set(-0.5, 1.65, 0);
+    pane.add(monthGraph);
+    pane.add(paneTitle);
+    return pane;
   };
 
-  const axis = () => {
-    const axes = new THREE.Group();
-    const axisLength = 0.2;
-    const cylinder = new THREE.CylinderBufferGeometry(
-      0.01,
-      0.01,
-      axisLength,
-      32
+  const framePane2 = (scaledWidth, scaledHeight) => {
+    const pane2 = new THREE.Group();
+    const material = new THREE.MeshBasicMaterial({ color: 0x757575 });
+    material.alphaMap = new THREE.DataTexture(
+      new Uint8Array([0, 100, 0]),
+      1,
+      1,
+      THREE.RGBFormat
     );
-    const xAxis = new THREE.Mesh(
-      cylinder,
-      new THREE.MeshBasicMaterial({ color: MANGO })
+    material.alphaMap.needsUpdate = true;
+    material.transparent = true;
+    graphPane = new THREE.Mesh(
+      new THREE.PlaneGeometry(scaledWidth * 2, scaledHeight + 0.02, 0),
+      material
     );
-    const yAxis = new THREE.Mesh(
-      cylinder,
-      new THREE.MeshBasicMaterial({ color: CHERRY })
+    graphPane.position.set(1.45, 1, 0);
+    pane2.add(graphPane);
+    const videoElement = videoBlog(
+      scaledWidth * 2,
+      scaledHeight + 0.02,
+      graphPane.position
     );
-    const zAxis = new THREE.Mesh(
-      cylinder,
-      new THREE.MeshBasicMaterial({ color: MINT })
-    );
-    xAxis.rotateZ(Math.PI / 2);
-    xAxis.position.set(axisLength / 2, 0, 0);
-    yAxis.position.set(0, axisLength / 2, 0);
-    zAxis.rotateX(Math.PI / 2);
-    zAxis.position.set(0, 0, axisLength / 2);
-    axes.add(xAxis);
-    axes.add(yAxis);
-    axes.add(zAxis);
-    return axes;
+    const paneTitle = fontInit("Promo Ads", 0.08, 0.008, 0xf0e87d);
+    paneTitle.position.set(1.1, 1.65, 0);
+    pane2.add(paneTitle);
+    pane2.add(videoElement);
+    return pane2;
   };
 
-  const videoBlog = (scaledWidth, scaledHeight) => {
+  // const axis = () => {
+  //   const axes = new THREE.Group();
+  //   const axisLength = 0.2;
+  //   const cylinder = new THREE.CylinderBufferGeometry(
+  //     0.01,
+  //     0.01,
+  //     axisLength,
+  //     32
+  //   );
+  //   const xAxis = new THREE.Mesh(
+  //     cylinder,
+  //     new THREE.MeshBasicMaterial({ color: MANGO })
+  //   );
+  //   const yAxis = new THREE.Mesh(
+  //     cylinder,
+  //     new THREE.MeshBasicMaterial({ color: CHERRY })
+  //   );
+  //   const zAxis = new THREE.Mesh(
+  //     cylinder,
+  //     new THREE.MeshBasicMaterial({ color: MINT })
+  //   );
+  //   xAxis.rotateZ(Math.PI / 2);
+  //   xAxis.position.set(axisLength / 2, 0, 0);
+  //   yAxis.position.set(0, axisLength / 2, 0);
+  //   zAxis.rotateX(Math.PI / 2);
+  //   zAxis.position.set(0, 0, axisLength / 2);
+  //   axes.add(xAxis);
+  //   axes.add(yAxis);
+  //   axes.add(zAxis);
+  //   return axes;
+  // };
+
+  const videoBlog = (scaledWidth, scaledHeight, position) => {
     video = document.createElement("video");
     video.src = videoFile;
     video.setAttribute("preload", "auto");
@@ -156,56 +198,97 @@ const imageTargetPipelineModule = () => {
     texture.magFilter = THREE.LinearFilter;
     texture.format = THREE.RGBFormat;
     const videoObj = new THREE.Mesh(
-      new THREE.PlaneGeometry(scaledWidth / 2, scaledHeight / 2),
+      new THREE.PlaneGeometry(scaledWidth, scaledHeight),
       new THREE.MeshBasicMaterial({ map: texture })
     );
-    videoObj.position.set(-0.5, 0.6, 0.003);
+    videoObj.position.copy(position);
     return videoObj;
   };
 
-  const createBarGraph = (scaledWidth, scaledHeight) => {
+  const createBarGraph = (scaledWidth, scaledHeight, position) => {
     const barsGroup = new THREE.Group();
+    barsGroup.backgroundColor = new THREE.Color(0xff0000);
     // Create initalScene which means what you want to place or draw when image target is achieved
-    let xDistance = 0;
+    let xDistance = position.x;
     let barsHeight = 0.25;
+
     for (let i = 0; i < graphInfo.length; i++) {
+      let currentText = fontInit(graphInfo[i].month, 0.02, 0.018, 0x333333);
+
       if (graphInfo[i].expense <= 300) {
+        let smallGroup = new THREE.Group();
         let smallScale = new THREE.Mesh(
           new THREE.PlaneGeometry(0.06, barsHeight, 0.001),
           new THREE.MeshBasicMaterial({ color: 0x4ca66f })
         );
-        smallScale.position.set(xDistance, -0.001, 0.5);
-        barsGroup.add(smallScale);
+        smallGroup.position.set(xDistance, 0, 0.5);
+        currentText.position.set(0, barsHeight - 0.1, 0.1);
+        smallGroup.add(currentText);
+        smallGroup.add(smallScale);
+        barsGroup.add(smallGroup);
       }
       if (graphInfo[i].expense > 301 && graphInfo[i].expense <= 600) {
+        let mediumGroup = new THREE.Group();
         let mediumScale = new THREE.Mesh(
           new THREE.PlaneGeometry(0.06, barsHeight * 2, 0.001),
           new THREE.MeshBasicMaterial({ color: 0xc29523 })
         );
         mediumScale.position.set(xDistance, 0.12, 0.5);
-        barsGroup.add(mediumScale);
+        currentText.position.set(xDistance, barsHeight * 2 - 0.1, 0.6);
+        mediumGroup.add(mediumScale);
+        mediumGroup.add(currentText);
+        barsGroup.add(mediumGroup);
       }
       if (graphInfo[i].expense > 600) {
+        let largeGroup = new THREE.Group();
         let largeScale = new THREE.Mesh(
           new THREE.PlaneGeometry(0.06, barsHeight * 3, 0.001),
           new THREE.MeshBasicMaterial({ color: 0xc46149 })
         );
         largeScale.position.set(xDistance, 0.25, 0.5);
-        barsGroup.add(largeScale);
+        currentText.position.set(xDistance, barsHeight * 3 - 0.1, 0.6);
+        largeGroup.add(largeScale);
+        largeGroup.add(currentText);
+        barsGroup.add(largeGroup);
       }
       xDistance = xDistance + 0.1;
     }
-    barsGroup.position.set(-0.5, 0.8, 0.05);
-
+    barsGroup.position.set(
+      -scaledWidth + 0.3,
+      scaledHeight / 2 + 0.05,
+      position.z
+    );
     return barsGroup;
+  };
+
+  const fontLoader = () => {
+    var loader = new THREE.FontLoader();
+    loader.load("./fonts/open_sans_semibold_regular.typeface.json", function(
+      response
+    ) {
+      font = response;
+    });
+  };
+
+  const fontInit = (currentExpense, size, height, color) => {
+    const geometry = new THREE.TextGeometry(currentExpense, {
+      font: font,
+      size: size,
+      height: height
+    });
+    const textLayout = new THREE.Mesh(
+      geometry,
+      new THREE.MeshBasicMaterial({ color: color })
+    );
+    return textLayout;
   };
 
   const buildPrimitiveFrame = ({ scaledWidth, scaledHeight }) => {
     const frame = new THREE.Group();
+
     frame.add(framePane(scaledWidth, scaledHeight));
-    frame.add(axis());
-    frame.add(createBarGraph(scaledWidth, scaledHeight));
-    frame.add(videoBlog(scaledWidth, scaledHeight));
+    frame.add(framePane2(scaledWidth, scaledHeight));
+    // frame.add(axis());
     model.add(frame);
     return frame;
   };
@@ -221,27 +304,28 @@ const imageTargetPipelineModule = () => {
     frame.position.copy(detail.position);
     frame.quaternion.copy(detail.rotation);
     frame.scale.set(detail.scale, detail.scale, detail.scale);
-    video.play();
     frame.visible = true;
+    video.play();
   };
 
   // Hides the image frame when the target is no longer detected.
   const hideTarget = ({ detail }) => {
-    if (detail.name === "card-detection-poc") {
-      video.pause();
+    if (detail.name === "card-new") {
       allFrames[detail.name].visible = false;
     }
+    video.pause();
   };
 
   const onStart = ({ canvas }) => {
     const { camera } = XR8.Threejs.xrScene();
     model = XR8.Threejs.xrScene().scene;
-    camera.position.set(0, 3, 0);
+    camera.position.set(0, 10, 0);
     // Sync the xr controller's 6DoF position and camera parameters with our scene.
     XR8.XrController.updateCameraProjectionMatrix({
       origin: camera.position,
       facing: camera.quaternion
     });
+    fontLoader();
   };
 
   return {
