@@ -1,10 +1,10 @@
 const imageTargetPipelineModule = () => {
-  // const CHERRY = 0xdd0065;
-  // const MINT = 0x00edaf;
-  // const MANGO = 0xffc828;
+  var raycaster = new THREE.Raycaster();
+  var mouse = new THREE.Vector2();
+
   const allFrames = {};
   const videoFile = "./video/video-12.mp4";
-  let model, video, font, graphPane;
+  let model, video, font, graphPane, camera, barsGroup;
   const graphInfo = [
     {
       id: "01",
@@ -108,7 +108,6 @@ const imageTargetPipelineModule = () => {
       material
     );
     graphPane.position.set(-0.2, 1, 0);
-    // debugger;
     pane.add(graphPane);
     const monthGraph = createBarGraph(
       scaledWidth,
@@ -206,7 +205,7 @@ const imageTargetPipelineModule = () => {
   };
 
   const createBarGraph = (scaledWidth, scaledHeight, position) => {
-    const barsGroup = new THREE.Group();
+    barsGroup = new THREE.Group();
     barsGroup.backgroundColor = new THREE.Color(0xff0000);
     // Create initalScene which means what you want to place or draw when image target is achieved
     let xDistance = position.x;
@@ -221,6 +220,7 @@ const imageTargetPipelineModule = () => {
           new THREE.PlaneGeometry(0.06, barsHeight, 0.001),
           new THREE.MeshBasicMaterial({ color: 0x4ca66f })
         );
+        smallScale.name = graphInfo[i].month;
         smallGroup.position.set(xDistance, 0, 0.5);
         currentText.position.set(0, barsHeight - 0.1, 0.1);
         smallGroup.add(currentText);
@@ -316,8 +316,24 @@ const imageTargetPipelineModule = () => {
     video.pause();
   };
 
+  const mouseInfo = e => {
+    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    var intersects = raycaster.intersectObjects(model.children, true);
+    for (var i = 0; i < intersects.length; i++) {
+      console.log(intersects[i]);
+      selectedGraphInfo(intersects[i].object);
+    }
+  };
+
+  const selectedGraphInfo = selectedObject => {
+    selectedObject.material.wireframe = true;
+  };
+
   const onStart = ({ canvas }) => {
-    const { camera } = XR8.Threejs.xrScene();
+    camera = XR8.Threejs.xrScene().camera;
+
     model = XR8.Threejs.xrScene().scene;
     camera.position.set(0, 10, 0);
     // Sync the xr controller's 6DoF position and camera parameters with our scene.
@@ -325,7 +341,9 @@ const imageTargetPipelineModule = () => {
       origin: camera.position,
       facing: camera.quaternion
     });
+
     fontLoader();
+    document.getElementById("camerafeed").addEventListener("click", mouseInfo);
   };
 
   return {
