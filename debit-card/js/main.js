@@ -1,10 +1,17 @@
 const imageTargetPipelineModule = () => {
-  var raycaster = new THREE.Raycaster();
-  var mouse = new THREE.Vector2();
+  let raycaster = new THREE.Raycaster(); // for handling events in three.js
+  var mouse = new THREE.Vector2(); // for updating mouse position using events
 
   const allFrames = {};
-  const videoFile = "./video/video-12.mp4";
-  let model, video, font, graphPane, camera, barsGroup;
+  const videoFile = "./video/video-12.mp4"; //video to load in POC
+  const fontsFile = "./fonts/open_sans_semibold_regular.typeface.json";
+  const graphTitle = "Monthly Expense Graph";
+  const financePromotions = "Financial Adviser";
+
+  let scene, video, font, graphPane, camera; //variables to use across
+  let selectedMonth, totalExpense, currentCurrency, textGroup, graphTextPane;
+
+  // static JSON Data integrate
   const graphInfo = [
     {
       id: "01",
@@ -92,6 +99,15 @@ const imageTargetPipelineModule = () => {
     }
   ];
 
+  //Fonts loader to load fonts
+  const fontLoader = () => {
+    var loader = new THREE.FontLoader();
+    loader.load(fontsFile, function(response) {
+      font = response;
+    });
+  };
+
+  // Frame for Graph
   const framePane = (scaledWidth, scaledHeight) => {
     const pane = new THREE.Group();
     const material = new THREE.MeshBasicMaterial({ color: 0xff9999 });
@@ -114,13 +130,14 @@ const imageTargetPipelineModule = () => {
       scaledHeight + 0.02,
       graphPane.position
     );
-    const paneTitle = fontInit("Monthly Expense", 0.08, 0.008, 0x333);
+    const paneTitle = fontInit(graphTitle, 0.08, 0.008, 0x333);
     paneTitle.position.set(-0.5, 1.65, 0);
     pane.add(monthGraph);
     pane.add(paneTitle);
     return pane;
   };
 
+  //Frame for Video Blog
   const framePane2 = (scaledWidth, scaledHeight) => {
     const pane2 = new THREE.Group();
     const material = new THREE.MeshBasicMaterial({ color: 0x757575 });
@@ -132,10 +149,13 @@ const imageTargetPipelineModule = () => {
     );
     material.alphaMap.needsUpdate = true;
     material.transparent = true;
-    graphPane = new THREE.Mesh(
-      new THREE.PlaneGeometry(scaledWidth * 2, scaledHeight + 0.02, 0),
-      material
+    const planeGeo = new THREE.PlaneGeometry(
+      scaledWidth * 2,
+      scaledHeight + 0.02,
+      0
     );
+    graphPane = new THREE.Mesh(planeGeo, material);
+    planeGeo.elementsNeedUpdate = true;
     graphPane.position.set(1.45, 1, 0);
     pane2.add(graphPane);
     const videoElement = videoBlog(
@@ -143,45 +163,14 @@ const imageTargetPipelineModule = () => {
       scaledHeight + 0.02,
       graphPane.position
     );
-    const paneTitle = fontInit("Promo Ads", 0.08, 0.008, 0xf0e87d);
+    const paneTitle = fontInit(financePromotions, 0.08, 0.008, 0xf0e87d);
     paneTitle.position.set(1.1, 1.65, 0);
     pane2.add(paneTitle);
     pane2.add(videoElement);
     return pane2;
   };
 
-  // const axis = () => {
-  //   const axes = new THREE.Group();
-  //   const axisLength = 0.2;
-  //   const cylinder = new THREE.CylinderBufferGeometry(
-  //     0.01,
-  //     0.01,
-  //     axisLength,
-  //     32
-  //   );
-  //   const xAxis = new THREE.Mesh(
-  //     cylinder,
-  //     new THREE.MeshBasicMaterial({ color: MANGO })
-  //   );
-  //   const yAxis = new THREE.Mesh(
-  //     cylinder,
-  //     new THREE.MeshBasicMaterial({ color: CHERRY })
-  //   );
-  //   const zAxis = new THREE.Mesh(
-  //     cylinder,
-  //     new THREE.MeshBasicMaterial({ color: MINT })
-  //   );
-  //   xAxis.rotateZ(Math.PI / 2);
-  //   xAxis.position.set(axisLength / 2, 0, 0);
-  //   yAxis.position.set(0, axisLength / 2, 0);
-  //   zAxis.rotateX(Math.PI / 2);
-  //   zAxis.position.set(0, 0, axisLength / 2);
-  //   axes.add(xAxis);
-  //   axes.add(yAxis);
-  //   axes.add(zAxis);
-  //   return axes;
-  // };
-
+  // Elements to draw video on canvas
   const videoBlog = (scaledWidth, scaledHeight, position) => {
     video = document.createElement("video");
     video.src = videoFile;
@@ -204,10 +193,12 @@ const imageTargetPipelineModule = () => {
     return videoObj;
   };
 
+  //Draw full bar graph with help of individual bars
   const createBarGraph = (scaledWidth, scaledHeight, position) => {
-    barsGroup = new THREE.Group();
+    let barsGroup = new THREE.Group();
     barsGroup.backgroundColor = new THREE.Color(0xff0000);
-    // Create initalScene which means what you want to place or draw when image target is achieved
+
+    // Create initialScene which means what you want to place or draw when image target is achieved
     let xDistance = position.x;
     let barsHeight = 0.25;
 
@@ -220,7 +211,10 @@ const imageTargetPipelineModule = () => {
           new THREE.PlaneGeometry(0.06, barsHeight, 0.001),
           new THREE.MeshBasicMaterial({ color: 0x4ca66f })
         );
-        smallScale.name = graphInfo[i].month;
+        smallScale.userData = Object.assign(
+          {},
+          { selectedGraphInfo: graphInfo[i] }
+        );
         smallGroup.position.set(xDistance, 0, 0.5);
         currentText.position.set(0, barsHeight - 0.1, 0.1);
         smallGroup.add(currentText);
@@ -233,6 +227,10 @@ const imageTargetPipelineModule = () => {
           new THREE.PlaneGeometry(0.06, barsHeight * 2, 0.001),
           new THREE.MeshBasicMaterial({ color: 0xc29523 })
         );
+        mediumScale.userData = Object.assign(
+          {},
+          { selectedGraphInfo: graphInfo[i] }
+        );
         mediumScale.position.set(xDistance, 0.12, 0.5);
         currentText.position.set(xDistance, barsHeight * 2 - 0.1, 0.6);
         mediumGroup.add(mediumScale);
@@ -244,6 +242,10 @@ const imageTargetPipelineModule = () => {
         let largeScale = new THREE.Mesh(
           new THREE.PlaneGeometry(0.06, barsHeight * 3, 0.001),
           new THREE.MeshBasicMaterial({ color: 0xc46149 })
+        );
+        largeScale.userData = Object.assign(
+          {},
+          { selectedGraphInfo: graphInfo[i] }
         );
         largeScale.position.set(xDistance, 0.25, 0.5);
         currentText.position.set(xDistance, barsHeight * 3 - 0.1, 0.6);
@@ -261,17 +263,9 @@ const imageTargetPipelineModule = () => {
     return barsGroup;
   };
 
-  const fontLoader = () => {
-    var loader = new THREE.FontLoader();
-    loader.load("./fonts/open_sans_semibold_regular.typeface.json", function(
-      response
-    ) {
-      font = response;
-    });
-  };
-
-  const fontInit = (currentExpense, size, height, color) => {
-    const geometry = new THREE.TextGeometry(currentExpense, {
+  //create common function to add fonts
+  const fontInit = (currentText, size, height, color) => {
+    const geometry = new THREE.TextGeometry(currentText, {
       font: font,
       size: size,
       height: height
@@ -283,17 +277,42 @@ const imageTargetPipelineModule = () => {
     return textLayout;
   };
 
+  // Frame for Graph
+  const selectedGraphInfoPane = (scaledWidth, scaledHeight) => {
+    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    material.alphaMap = new THREE.DataTexture(
+      new Uint8Array([0, 100, 0]),
+      1,
+      1,
+      THREE.RGBFormat
+    );
+    material.alphaMap.needsUpdate = true;
+    material.transparent = true;
+    graphTextPane = new THREE.Mesh(
+      new THREE.PlaneGeometry(scaledWidth * 1.5, scaledHeight / 2, 0),
+      material
+    );
+    graphTextPane.position.set(-0.25, -0.85, 0);
+    const paneTitle = fontInit("Details of Graph", 0.07, 0.008, 0x333);
+    paneTitle.position.set(-0.5, 0.15, 0);
+    graphTextPane.add(paneTitle);
+    graphTextPane.add(textGroup);
+    return graphTextPane;
+  };
+
+  // Add frames to scene
   const buildPrimitiveFrame = ({ scaledWidth, scaledHeight }) => {
     const frame = new THREE.Group();
 
     frame.add(framePane(scaledWidth, scaledHeight));
     frame.add(framePane2(scaledWidth, scaledHeight));
+    frame.add(selectedGraphInfoPane(scaledWidth, scaledHeight));
     // frame.add(axis());
-    model.add(frame);
+    scene.add(frame);
     return frame;
   };
 
-  //To load model or 3d item if image target name matches the detected area.
+  //To load scene or 3d item if image target name matches the detected area.
   // Places content over image target
   const showTarget = ({ detail }) => {
     let frame = allFrames[detail.name];
@@ -317,33 +336,46 @@ const imageTargetPipelineModule = () => {
   };
 
   const mouseInfo = e => {
+    graphTextPane.remove(selectedMonth);
+    graphTextPane.remove(totalExpense);
     mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
-    var intersects = raycaster.intersectObjects(model.children, true);
+    var intersects = raycaster.intersectObjects(scene.children, true);
     for (var i = 0; i < intersects.length; i++) {
-      console.log(intersects[i]);
-      selectedGraphInfo(intersects[i].object);
+      updateGraphDetails(intersects[i].object);
     }
   };
 
-  const selectedGraphInfo = selectedObject => {
-    selectedObject.material.wireframe = true;
+  const updateGraphDetails = ({ userData }) => {
+    if (!!Object.keys(userData).length) {
+      console.log("userData", userData);
+      const { selectedGraphInfo = {} } = userData;
+      const { month = "", expense = "", current = "" } = selectedGraphInfo;
+      selectedMonth = fontInit("Month: " + month, 0.05, 0.004, 0x333);
+      totalExpense = fontInit("Total Expense: " + expense, 0.05, 0.004, 0x333);
+      currentCurrency = fontInit("Currency: " + current, 0.05, 0.004, 0x333);
+      selectedMonth.position.set(-0.24, 0, 0);
+      totalExpense.position.set(-0.24, -0.2, 0);
+      currentCurrency.position.set(-0.2, -0.52, 0);
+      graphTextPane.add(selectedMonth);
+      graphTextPane.add(totalExpense);
+    }
   };
+  document.getElementById("cameraFeed").addEventListener("click", mouseInfo);
 
   const onStart = ({ canvas }) => {
     camera = XR8.Threejs.xrScene().camera;
 
-    model = XR8.Threejs.xrScene().scene;
-    camera.position.set(0, 10, 0);
+    scene = XR8.Threejs.xrScene().scene;
+    camera.position.set(0, 3, 0);
+    fontLoader();
+
     // Sync the xr controller's 6DoF position and camera parameters with our scene.
     XR8.XrController.updateCameraProjectionMatrix({
       origin: camera.position,
       facing: camera.quaternion
     });
-
-    fontLoader();
-    document.getElementById("camerafeed").addEventListener("click", mouseInfo);
   };
 
   return {
@@ -375,7 +407,7 @@ const onxrloaded = () => {
   ]);
 
   // Open the camera and start running the camera run loop.
-  XR8.run({ canvas: document.getElementById("camerafeed") });
+  XR8.run({ canvas: document.getElementById("cameraFeed") });
 };
 
 // Show loading screen before the full XR library has been loaded.
