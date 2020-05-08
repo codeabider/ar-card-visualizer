@@ -7,10 +7,13 @@ const imageTargetPipelineModule = () => {
   const fontsFile = "./fonts/open_sans_semibold_regular.typeface.json";
   const graphTitle = "Monthly Expense Graph";
   const financePromotions = "Financial Adviser";
-
-  let scene, video, font, graphPane, camera; //variables to use across
-  let selectedMonth, totalExpense, currentCurrency, textGroup, graphTextPane;
-
+  const canvas = document.getElementById("cameraFeed");
+  let scene, video, font, graphPane, camera, barsGroup; //variables to use across
+  let selectedMonth, totalExpense, currentCurrency, selectedBarGraph;
+  selectedMonth = "";
+  totalExpense = "";
+  currentCurrency = "";
+  selectedBarGraph = {};
   // static JSON Data integrate
   const graphInfo = [
     {
@@ -110,9 +113,9 @@ const imageTargetPipelineModule = () => {
   // Frame for Graph
   const framePane = (scaledWidth, scaledHeight) => {
     const pane = new THREE.Group();
-    const material = new THREE.MeshBasicMaterial({ color: 0xff9999 });
+    const material = new THREE.MeshBasicMaterial({ color: 0xf7f5cb });
     material.alphaMap = new THREE.DataTexture(
-      new Uint8Array([0, 70, 0]),
+      new Uint8Array([0, 100, 0]),
       1,
       1,
       THREE.RGBFormat
@@ -120,9 +123,10 @@ const imageTargetPipelineModule = () => {
     material.alphaMap.needsUpdate = true;
     material.transparent = true;
     graphPane = new THREE.Mesh(
-      new THREE.PlaneGeometry(scaledWidth * 2, scaledHeight + 0.05, 0),
+      new THREE.PlaneGeometry(scaledWidth + 1, scaledHeight + 0.05, 0),
       material
     );
+    graphPane.material.wireframe = false;
     graphPane.position.set(-0.2, 1, 0);
     pane.add(graphPane);
     const monthGraph = createBarGraph(
@@ -130,7 +134,7 @@ const imageTargetPipelineModule = () => {
       scaledHeight + 0.02,
       graphPane.position
     );
-    const paneTitle = fontInit(graphTitle, 0.08, 0.008, 0x333);
+    const paneTitle = fontInit(graphTitle, 0.06, 0.005, 0x333);
     paneTitle.position.set(-0.5, 1.65, 0);
     pane.add(monthGraph);
     pane.add(paneTitle);
@@ -140,9 +144,9 @@ const imageTargetPipelineModule = () => {
   //Frame for Video Blog
   const framePane2 = (scaledWidth, scaledHeight) => {
     const pane2 = new THREE.Group();
-    const material = new THREE.MeshBasicMaterial({ color: 0x757575 });
+    const material = new THREE.MeshBasicMaterial({ color: 0xaac9f0 });
     material.alphaMap = new THREE.DataTexture(
-      new Uint8Array([0, 100, 0]),
+      new Uint8Array([0, 50, 0]),
       1,
       1,
       THREE.RGBFormat
@@ -155,18 +159,17 @@ const imageTargetPipelineModule = () => {
       0
     );
     graphPane = new THREE.Mesh(planeGeo, material);
-    planeGeo.elementsNeedUpdate = true;
-    graphPane.position.set(1.45, 1, 0);
     pane2.add(graphPane);
     const videoElement = videoBlog(
-      scaledWidth * 2,
-      scaledHeight + 0.02,
+      scaledWidth * 1.5,
+      scaledHeight * 0.8,
       graphPane.position
     );
-    const paneTitle = fontInit(financePromotions, 0.08, 0.008, 0xf0e87d);
-    paneTitle.position.set(1.1, 1.65, 0);
+    const paneTitle = fontInit(financePromotions, 0.08, 0.008, 0x333333);
+    paneTitle.position.set(-0.5, 0.5, 0);
     pane2.add(paneTitle);
     pane2.add(videoElement);
+    pane2.position.set(-0.2, -1, 0);
     return pane2;
   };
 
@@ -174,6 +177,7 @@ const imageTargetPipelineModule = () => {
   const videoBlog = (scaledWidth, scaledHeight, position) => {
     video = document.createElement("video");
     video.src = videoFile;
+    video.setAttribute("controls", "true");
     video.setAttribute("preload", "auto");
     video.setAttribute("autoplay", "true");
     video.setAttribute("loop", "");
@@ -195,9 +199,9 @@ const imageTargetPipelineModule = () => {
 
   //Draw full bar graph with help of individual bars
   const createBarGraph = (scaledWidth, scaledHeight, position) => {
-    let barsGroup = new THREE.Group();
-    barsGroup.backgroundColor = new THREE.Color(0xff0000);
+    barsGroup = new THREE.Group();
 
+    barsGroup.backgroundColor = new THREE.Color(0xff0000);
     // Create initialScene which means what you want to place or draw when image target is achieved
     let xDistance = position.x;
     let barsHeight = 0.25;
@@ -211,6 +215,7 @@ const imageTargetPipelineModule = () => {
           new THREE.PlaneGeometry(0.06, barsHeight, 0.001),
           new THREE.MeshBasicMaterial({ color: 0x4ca66f })
         );
+        smallGroup.name = graphInfo[i].month;
         smallScale.userData = Object.assign(
           {},
           { selectedGraphInfo: graphInfo[i] }
@@ -231,10 +236,12 @@ const imageTargetPipelineModule = () => {
           {},
           { selectedGraphInfo: graphInfo[i] }
         );
+        mediumGroup.name = graphInfo[i].month;
+
         mediumScale.position.set(xDistance, 0.12, 0.5);
         currentText.position.set(xDistance, barsHeight * 2 - 0.1, 0.6);
-        mediumGroup.add(mediumScale);
         mediumGroup.add(currentText);
+        mediumGroup.add(mediumScale);
         barsGroup.add(mediumGroup);
       }
       if (graphInfo[i].expense > 600) {
@@ -247,17 +254,19 @@ const imageTargetPipelineModule = () => {
           {},
           { selectedGraphInfo: graphInfo[i] }
         );
+        largeGroup.name = graphInfo[i].month;
+
         largeScale.position.set(xDistance, 0.25, 0.5);
         currentText.position.set(xDistance, barsHeight * 3 - 0.1, 0.6);
-        largeGroup.add(largeScale);
         largeGroup.add(currentText);
+        largeGroup.add(largeScale);
         barsGroup.add(largeGroup);
       }
-      xDistance = xDistance + 0.1;
+      xDistance = xDistance + 0.08;
     }
     barsGroup.position.set(
-      -scaledWidth + 0.3,
-      scaledHeight / 2 + 0.05,
+      -scaledWidth + 0.003,
+      scaledHeight / 1.5,
       position.z
     );
     return barsGroup;
@@ -277,36 +286,12 @@ const imageTargetPipelineModule = () => {
     return textLayout;
   };
 
-  // Frame for Graph
-  const selectedGraphInfoPane = (scaledWidth, scaledHeight) => {
-    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    material.alphaMap = new THREE.DataTexture(
-      new Uint8Array([0, 100, 0]),
-      1,
-      1,
-      THREE.RGBFormat
-    );
-    material.alphaMap.needsUpdate = true;
-    material.transparent = true;
-    graphTextPane = new THREE.Mesh(
-      new THREE.PlaneGeometry(scaledWidth * 1.5, scaledHeight / 2, 0),
-      material
-    );
-    graphTextPane.position.set(-0.25, -0.85, 0);
-    const paneTitle = fontInit("Details of Graph", 0.07, 0.008, 0x333);
-    paneTitle.position.set(-0.5, 0.15, 0);
-    graphTextPane.add(paneTitle);
-    graphTextPane.add(textGroup);
-    return graphTextPane;
-  };
-
   // Add frames to scene
   const buildPrimitiveFrame = ({ scaledWidth, scaledHeight }) => {
     const frame = new THREE.Group();
 
     frame.add(framePane(scaledWidth, scaledHeight));
     frame.add(framePane2(scaledWidth, scaledHeight));
-    frame.add(selectedGraphInfoPane(scaledWidth, scaledHeight));
     // frame.add(axis());
     scene.add(frame);
     return frame;
@@ -329,17 +314,28 @@ const imageTargetPipelineModule = () => {
 
   // Hides the image frame when the target is no longer detected.
   const hideTarget = ({ detail }) => {
-    if (detail.name === "card-new") {
+    if (detail.name === "debit-card-image") {
       allFrames[detail.name].visible = false;
     }
     video.pause();
   };
 
   const mouseInfo = e => {
-    graphTextPane.remove(selectedMonth);
-    graphTextPane.remove(totalExpense);
     mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    console.log(barsGroup);
+    if (!!Object.keys(selectedBarGraph).length) {
+      barsGroup.remove(selectedMonth);
+      barsGroup.remove(totalExpense);
+      const currentInfo = barsGroup.children.map(data => {
+        if (data.name === selectedBarGraph.selectedGraphInfo.month) {
+          data.children[1].material.wireframe = false;
+        }
+        return data;
+      });
+      barsGroup.children = [];
+      barsGroup.children = currentInfo;
+    }
     raycaster.setFromCamera(mouse, camera);
     var intersects = raycaster.intersectObjects(scene.children, true);
     for (var i = 0; i < intersects.length; i++) {
@@ -347,21 +343,24 @@ const imageTargetPipelineModule = () => {
     }
   };
 
-  const updateGraphDetails = ({ userData }) => {
+  const updateGraphDetails = ({ userData, material }) => {
     if (!!Object.keys(userData).length) {
-      console.log("userData", userData);
+      material.wireframe = true;
+      selectedBarGraph = userData;
       const { selectedGraphInfo = {} } = userData;
       const { month = "", expense = "", current = "" } = selectedGraphInfo;
       selectedMonth = fontInit("Month: " + month, 0.05, 0.004, 0x333);
       totalExpense = fontInit("Total Expense: " + expense, 0.05, 0.004, 0x333);
       currentCurrency = fontInit("Currency: " + current, 0.05, 0.004, 0x333);
-      selectedMonth.position.set(-0.24, 0, 0);
-      totalExpense.position.set(-0.24, -0.2, 0);
-      currentCurrency.position.set(-0.2, -0.52, 0);
-      graphTextPane.add(selectedMonth);
-      graphTextPane.add(totalExpense);
+      selectedMonth.position.set(0.8, 0.6, 0);
+      totalExpense.position.set(0.8, 0.45, 0);
+      currentCurrency.position.set(0.8, 0.3, 0);
+      barsGroup.add(selectedMonth);
+      barsGroup.add(totalExpense);
+      barsGroup.add(currentCurrency);
     }
   };
+
   document.getElementById("cameraFeed").addEventListener("click", mouseInfo);
 
   const onStart = ({ canvas }) => {
