@@ -2,12 +2,13 @@ const imageTargetPipelineModule = () => {
   let raycaster = new THREE.Raycaster(); // for handling events in three.js
   var mouse = new THREE.Vector2(); // for updating mouse position using events
 
+  let currentVideoPlay = false;
   const allFrames = {};
   const videoFile = "./video/video-12.mp4"; //video to load in POC
   const fontsFile = "./fonts/open_sans_semibold_regular.typeface.json";
   const graphTitle = "Monthly Expense Graph";
   const financePromotions = "Financial Adviser";
-  const canvas = document.getElementById("cameraFeed");
+  // const canvas = document.getElementById("cameraFeed");
   let scene, video, font, graphPane, camera, barsGroup; //variables to use across
   let selectedMonth, totalExpense, currentCurrency, selectedBarGraph;
   selectedMonth = "";
@@ -115,7 +116,7 @@ const imageTargetPipelineModule = () => {
     const pane = new THREE.Group();
     const material = new THREE.MeshBasicMaterial({ color: 0xf7f5cb });
     material.alphaMap = new THREE.DataTexture(
-      new Uint8Array([0, 100, 0]),
+      new Uint8Array([0, 0, 0]),
       1,
       1,
       THREE.RGBFormat
@@ -136,6 +137,7 @@ const imageTargetPipelineModule = () => {
     );
     const paneTitle = fontInit(graphTitle, 0.06, 0.005, 0x333);
     paneTitle.position.set(-0.5, 1.65, 0);
+    pane.name = "barGraphPane";
     pane.add(monthGraph);
     pane.add(paneTitle);
     return pane;
@@ -146,7 +148,7 @@ const imageTargetPipelineModule = () => {
     const pane2 = new THREE.Group();
     const material = new THREE.MeshBasicMaterial({ color: 0xaac9f0 });
     material.alphaMap = new THREE.DataTexture(
-      new Uint8Array([0, 50, 0]),
+      new Uint8Array([0, 0, 0]),
       1,
       1,
       THREE.RGBFormat
@@ -159,6 +161,7 @@ const imageTargetPipelineModule = () => {
       0
     );
     graphPane = new THREE.Mesh(planeGeo, material);
+    pane2.name = "videoData";
     pane2.add(graphPane);
     const videoElement = videoBlog(
       scaledWidth * 1.5,
@@ -169,7 +172,7 @@ const imageTargetPipelineModule = () => {
     paneTitle.position.set(-0.5, 0.5, 0);
     pane2.add(paneTitle);
     pane2.add(videoElement);
-    pane2.position.set(-0.2, -1, 0);
+    pane2.position.set(-0.13, -1.21, 0);
     return pane2;
   };
 
@@ -179,7 +182,7 @@ const imageTargetPipelineModule = () => {
     video.src = videoFile;
     video.setAttribute("controls", "true");
     video.setAttribute("preload", "auto");
-    video.setAttribute("autoplay", "true");
+    video.setAttribute("autoplay", "false");
     video.setAttribute("loop", "");
     video.setAttribute("muted", "");
     video.setAttribute("playsinline", "");
@@ -264,11 +267,7 @@ const imageTargetPipelineModule = () => {
       }
       xDistance = xDistance + 0.08;
     }
-    barsGroup.position.set(
-      -scaledWidth + 0.003,
-      scaledHeight / 1.5,
-      position.z
-    );
+    barsGroup.position.set(-0.45, scaledHeight / 1.9, position.z);
     return barsGroup;
   };
 
@@ -309,24 +308,24 @@ const imageTargetPipelineModule = () => {
     frame.quaternion.copy(detail.rotation);
     frame.scale.set(detail.scale, detail.scale, detail.scale);
     frame.visible = true;
-    video.play();
   };
 
   // Hides the image frame when the target is no longer detected.
   const hideTarget = ({ detail }) => {
     if (detail.name === "debit-card-image") {
       allFrames[detail.name].visible = false;
+      video.pause();
     }
-    video.pause();
   };
 
   const mouseInfo = e => {
     mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-    console.log(barsGroup);
+
     if (!!Object.keys(selectedBarGraph).length) {
       barsGroup.remove(selectedMonth);
       barsGroup.remove(totalExpense);
+      barsGroup.remove(currentCurrency);
       const currentInfo = barsGroup.children.map(data => {
         if (data.name === selectedBarGraph.selectedGraphInfo.month) {
           data.children[1].material.wireframe = false;
@@ -338,8 +337,21 @@ const imageTargetPipelineModule = () => {
     }
     raycaster.setFromCamera(mouse, camera);
     var intersects = raycaster.intersectObjects(scene.children, true);
-    for (var i = 0; i < intersects.length; i++) {
-      updateGraphDetails(intersects[i].object);
+
+    // updateGraphDetails(intersects[i].object);
+    if (intersects[1].object.parent.name === "videoData") {
+      updateVideoObject(intersects[1].object);
+    } else {
+      updateGraphDetails(intersects[0].object);
+    }
+    currentVideoPlay = !currentVideoPlay;
+  };
+
+  const updateVideoObject = data => {
+    if (currentVideoPlay) {
+      video.play();
+    } else {
+      video.pause();
     }
   };
 
